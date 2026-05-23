@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 
-export function useWishlist() {
-  const [wishlistedIds, setwishlistedIds] = useState<number[]>([]);
+export function useShortlist() {
+  const [shortlistedIds, setShortlistedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchwishlist = useCallback(async () => {
+  const fetchShortlist = useCallback(async () => {
     try {
-      const res = await fetch("/api/wishlist");
+      const res = await fetch("/api/shortlist");
       if (!res.ok) return;
       const colleges = await res.json();
-      setwishlistedIds(colleges.map((c: { id: number }) => c.id));
+      setShortlistedIds(colleges.map((c: { id: number }) => c.id));
     } catch {
       // not logged in or error
     } finally {
@@ -18,35 +18,35 @@ export function useWishlist() {
   }, []);
 
   useEffect(() => {
-    fetchwishlist();
-  }, [fetchwishlist]);
+    fetchShortlist();
+  }, [fetchShortlist]);
 
   const toggle = useCallback(async (collegeId: number) => {
-    const iswishlisted = wishlistedIds.includes(collegeId);
+    const isShortlisted = shortlistedIds.includes(collegeId);
 
     // Optimistic update
-    setwishlistedIds((prev) =>
-      iswishlisted ? prev.filter((id) => id !== collegeId) : [...prev, collegeId]
+    setShortlistedIds((prev) =>
+      isShortlisted ? prev.filter((id) => id !== collegeId) : [...prev, collegeId]
     );
 
     try {
-      await fetch("/api/wishlist", {
-        method: iswishlisted ? "DELETE" : "POST",
+      await fetch("/api/shortlist", {
+        method: isShortlisted ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ collegeId }),
       });
     } catch {
       // Revert on error
-      setwishlistedIds((prev) =>
-        iswishlisted ? [...prev, collegeId] : prev.filter((id) => id !== collegeId)
+      setShortlistedIds((prev) =>
+        isShortlisted ? [...prev, collegeId] : prev.filter((id) => id !== collegeId)
       );
     }
-  }, [wishlistedIds]);
+  }, [shortlistedIds]);
 
-  const iswishlisted = useCallback(
-    (collegeId: number) => wishlistedIds.includes(collegeId),
-    [wishlistedIds]
+  const isShortlisted = useCallback(
+    (collegeId: number) => shortlistedIds.includes(collegeId),
+    [shortlistedIds]
   );
 
-  return { wishlistedIds, iswishlisted, toggle, loading };
+  return { shortlistedIds, isShortlisted, toggle, loading };
 }

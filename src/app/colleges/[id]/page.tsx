@@ -3,6 +3,9 @@
 import { useEffect, useState, Suspense } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useShortlist } from "@/hooks/useShortlist";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type Course = {
   id: number;
@@ -27,10 +30,14 @@ type College = {
 
 function CollegeDetailPageClient() {
   const { id } = useParams();
+  const { data: session } = useSession();
+  const router = useRouter();
   const [college, setCollege] = useState<College | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [shortlisted, setShortlisted] = useState(false);
+
+  // ✅ Use the real shortlist hook
+  const { isShortlisted, toggle, loading: shortlistLoading } = useShortlist();
 
   useEffect(() => {
     const fetch_ = async () => {
@@ -46,6 +53,16 @@ function CollegeDetailPageClient() {
     };
     fetch_();
   }, [id]);
+
+  const handleShortlist = async () => {
+    if (!session?.user) {
+      // Redirect to login if not logged in
+      router.push("/auth/login");
+      return;
+    }
+    if (!college) return;
+    await toggle(college.id);
+  };
 
   if (loading) {
     return (
@@ -78,6 +95,9 @@ function CollegeDetailPageClient() {
   }
 
   if (!college) return null;
+
+  // ✅ Read real shortlist state
+  const saved = isShortlisted(college.id);
 
   const feesLabel = college.fees_per_year >= 100000
     ? `₹${(college.fees_per_year / 100000).toFixed(1)}L`
@@ -127,19 +147,23 @@ function CollegeDetailPageClient() {
               {college.overview}
             </p>
             <div className="flex gap-2.5 flex-wrap">
+
+              {/* ✅ Fixed shortlist button */}
               <button
-                onClick={() => setShortlisted(!shortlisted)}
-                className={`flex items-center gap-2 text-[12px] font-medium px-4 py-2 rounded-[9px] border transition-colors ${
-                  shortlisted
+                onClick={handleShortlist}
+                disabled={shortlistLoading}
+                className={`flex items-center gap-2 text-[12px] font-medium px-4 py-2 rounded-[9px] border transition-all ${
+                  saved
                     ? "!bg-violet-500/20 border-violet-500/40 text-violet-400"
                     : "bg-violet-500/10 border-violet-500/25 text-violet-400 hover:bg-violet-500/20"
-                }`}
+                } ${shortlistLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {shortlisted ? "♥ Shortlisted" : "♡ Shortlist"}
+                {saved ? "♥ Shortlisted" : "♡ Shortlist"}
               </button>
+
               <Link
                 href={`/compare?ids=${college.id}`}
-                className="flex items-center gap-2 text-[12px] font-medium px-4 py-2 rounded-[9px] bg-cyan-500/08 border border-cyan-500/25 text-cyan-400 hover:bg-cyan-500/15 transition-colors"
+                className="flex items-center gap-2 text-[12px] font-medium px-4 py-2 rounded-[9px] bg-cyan-500/[0.08] border border-cyan-500/25 text-cyan-400 hover:bg-cyan-500/15 transition-colors"
               >
                 ⇄ Compare
               </Link>
@@ -152,7 +176,7 @@ function CollegeDetailPageClient() {
           {/* NIRF rank box */}
           <div className="!bg-white/[0.04] border border-white/[0.08] rounded-2xl px-6 py-5 text-center shrink-0 hidden sm:block">
             <div className="text-[28px] font-medium text-amber-400">
-              #{Math.ceil(Math.random() * 20)}
+              #{Math.ceil(college.id % 20) + 1}
             </div>
             <div className="text-[11px] text-white/30 mt-1">NIRF rank</div>
           </div>
@@ -181,10 +205,7 @@ function CollegeDetailPageClient() {
         {/* Main content + sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 pb-10">
 
-          {/* Left — courses + placement */}
           <div className="flex flex-col gap-4">
-
-            {/* Courses */}
             <div className="!bg-[#0d2137] border border-white/[0.06] rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-white/[0.06] flex items-center gap-2">
                 <span className="text-cyan-400">📚</span>
@@ -212,7 +233,6 @@ function CollegeDetailPageClient() {
               )}
             </div>
 
-            {/* Placement breakdown */}
             <div className="!bg-[#0d2137] border border-white/[0.06] rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-white/[0.06] flex items-center gap-2">
                 <span className="text-green-400">📊</span>
@@ -235,15 +255,11 @@ function CollegeDetailPageClient() {
                 ))}
               </div>
             </div>
-
           </div>
 
-          {/* Sidebar */}
           <div className="flex flex-col gap-4">
-
-            {/* Quick facts */}
             <div className="!bg-[#0d2137] border border-white/[0.06] rounded-2xl overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center gap-2">
+              <div className="px-5 py-3.5 border-b border-white/[0.06]">
                 <span className="text-white/40 text-[13px]">ℹ Quick facts</span>
               </div>
               {[
@@ -263,7 +279,6 @@ function CollegeDetailPageClient() {
               ))}
             </div>
 
-            {/* Location */}
             <div className="!bg-[#0d2137] border border-white/[0.06] rounded-2xl overflow-hidden">
               <div className="px-5 py-3.5 border-b border-white/[0.06]">
                 <span className="text-white/40 text-[13px]">📍 Location</span>
@@ -275,7 +290,6 @@ function CollegeDetailPageClient() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useWishlist } from "@/hooks/useShortlist";
+import { useShortlist } from "@/hooks/useShortlist";
 
 type College = {
   id: number;
@@ -17,10 +17,10 @@ type College = {
   type: string;
 };
 
-export default function wishlistPage() {
+export default function ShortlistPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { toggle, iswishlisted } = useWishlist();
+  const { toggle, isShortlisted } = useShortlist();
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +31,7 @@ export default function wishlistPage() {
     }
     if (status !== "authenticated") return;
 
-    fetch("/api/wishlist")
+    fetch("/api/shortlist")
       .then((r) => r.json())
       .then((data) => {
         setColleges(Array.isArray(data) ? data : []);
@@ -65,7 +65,7 @@ export default function wishlistPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-[22px] font-medium text-white mb-1">My wishlist</h1>
+            <h1 className="text-[22px] font-medium text-white mb-1">My Shortlist</h1>
             <p className="text-[13px] text-white/35">
               {colleges.length === 0
                 ? "No colleges saved yet"
@@ -83,7 +83,7 @@ export default function wishlistPage() {
         {colleges.length === 0 ? (
           <div className="text-center py-24 border border-white/[0.06] rounded-2xl !bg-[#0d2137]">
             <div className="text-5xl mb-4">🎓</div>
-            <p className="text-white/50 text-[15px] mb-2">Your wishlist is empty</p>
+            <p className="text-white/50 text-[15px] mb-2">Your shortlist is empty</p>
             <p className="text-white/25 text-[13px] mb-6">Save colleges you're interested in to compare them later</p>
             <Link
               href="/colleges"
@@ -157,7 +157,7 @@ export default function wishlistPage() {
                 href={`/compare?ids=${colleges.slice(0, 3).map(c => c.id).join(",")}`}
                 className="mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-cyan-400/20 text-cyan-400 text-[13px] font-medium hover:bg-cyan-400/08 transition-colors !bg-cyan-400/04"
               >
-                ⇄ Compare your wishlisted colleges
+                ⇄ Compare your shortlisted colleges
               </Link>
             )}
           </div>
