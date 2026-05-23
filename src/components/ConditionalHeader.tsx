@@ -24,6 +24,7 @@ export default function ConditionalHeader() {
   const navLinks = [
     { href: "/colleges", label: "Colleges" },
     { href: "/compare", label: "Compare" },
+    { href: "/shortlist", label: "Shortlist" },
   ];
 
   return (
